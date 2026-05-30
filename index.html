@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Leitor RFID — Biblioteca</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0d14; --surface: #16161f; --card: #1e1e2e;
+    --border: rgba(255,255,255,0.08); --accent: #6ee7b7; --accent2: #818cf8;
+    --text: #f0f0f8; --muted: #6b7280; --danger: #f87171; --success: #6ee7b7;
+    --mono: 'Space Mono', monospace; --sans: 'DM Sans', sans-serif;
+  }
+  body {
+    background: var(--bg); color: var(--text); font-family: var(--sans);
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; padding: 2rem 1rem 4rem; overflow-x: hidden;
+  }
+  .header { text-align: center; margin-bottom: 2.5rem; animation: fadeDown 0.6s ease both; }
+  .header-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(110,231,183,0.1); border: 1px solid rgba(110,231,183,0.25);
+    color: var(--accent); font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.12em; padding: 5px 14px; border-radius: 100px; margin-bottom: 1rem;
+  }
+  .header-badge .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+  h1 { font-size: clamp(1.6rem,5vw,2.2rem); font-weight: 600; letter-spacing: -0.02em; }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 0.4rem; }
+
+  .scanner-card {
+    width: 100%; max-width: 420px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 20px; padding: 2rem;
+    margin-bottom: 1.5rem; animation: fadeUp 0.6s ease 0.1s both;
+  }
+
+  .nfc-zone {
+    background: var(--surface); border: 1.5px dashed rgba(129,140,248,0.35);
+    border-radius: 16px; padding: 2rem 1.5rem; text-align: center;
+    margin-bottom: 1.25rem; position: relative; overflow: hidden;
+    transition: border-color 0.3s, background 0.3s; cursor: pointer;
+  }
+  .nfc-zone.listening { border-color: var(--accent2); background: rgba(129,140,248,0.06); }
+  .nfc-zone.reading   { border-color: var(--accent);  background: rgba(110,231,183,0.06); }
+  .nfc-zone.error-state { border-color: var(--danger); background: rgba(248,113,113,0.06); }
+
+  .nfc-rings { position: relative; width: 72px; height: 72px; margin: 0 auto 1rem; }
+  .nfc-ring {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid rgba(129,140,248,0.3);
+    animation: ringExpand 2s ease infinite; opacity: 0;
+  }
+  .nfc-ring:nth-child(2) { animation-delay: 0.5s; }
+  .nfc-ring:nth-child(3) { animation-delay: 1s; }
+  .nfc-icon-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .nfc-icon-center svg { width: 32px; height: 32px; color: var(--accent2); transition: color 0.3s; }
+  .nfc-zone.reading .nfc-icon-center svg { color: var(--accent); }
+  .nfc-zone.error-state .nfc-icon-center svg { color: var(--danger); }
+
+  .nfc-status-text {
+    font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.1em;
+    color: var(--muted); text-transform: uppercase; transition: color 0.3s; margin-bottom: 0.4rem;
+  }
+  .nfc-zone.listening .nfc-status-text { color: var(--accent2); }
+  .nfc-zone.reading   .nfc-status-text { color: var(--accent); }
+  .nfc-zone.error-state .nfc-status-text { color: var(--danger); }
+  .nfc-hint { font-size: 0.78rem; color: var(--muted); }
+
+  .divider {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 1.25rem; color: var(--muted); font-size: 0.75rem;
+    font-family: var(--mono); letter-spacing: 0.08em;
+  }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .rfid-display {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1rem 1.25rem;
+    margin-bottom: 1rem; display: flex; align-items: center; gap: 12px;
+  }
+  .rfid-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(129,140,248,0.12); border: 1px solid rgba(129,140,248,0.2);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .rfid-icon svg { width: 20px; height: 20px; color: var(--accent2); }
+  .rfid-input-wrap { flex: 1; }
+  .rfid-input-wrap label {
+    display: block; font-size: 11px; letter-spacing: 0.08em;
+    color: var(--muted); font-family: var(--mono); margin-bottom: 4px; text-transform: uppercase;
+  }
+  #rfidInput {
+    width: 100%; background: transparent; border: none; outline: none;
+    font-family: var(--mono); font-size: 1.05rem; color: var(--accent2);
+    letter-spacing: 0.1em; caret-color: var(--accent);
+  }
+  #rfidInput::placeholder { color: rgba(107,114,128,0.4); }
+
+  .btn-scan {
+    width: 100%; padding: 0.9rem; background: var(--accent2); color: #0d0d14;
+    font-family: var(--sans); font-size: 0.95rem; font-weight: 600;
+    border: none; border-radius: 12px; cursor: pointer; letter-spacing: 0.02em;
+    transition: opacity 0.2s, transform 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-scan:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-scan svg { width: 18px; height: 18px; }
+
+  .quick-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1.25rem; }
+  .quick-tags p { width: 100%; font-size: 11px; color: var(--muted); font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 2px; }
+  .tag {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    color: var(--muted); font-family: var(--mono); font-size: 0.75rem;
+    padding: 5px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.05em;
+  }
+  .tag:hover { border-color: var(--accent2); color: var(--accent2); background: rgba(129,140,248,0.08); }
+
+  .result-card {
+    width: 100%; max-width: 420px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 20px; overflow: hidden;
+    display: none; animation: resultReveal 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  .result-card.visible { display: block; }
+  .result-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse 1.5s infinite; flex-shrink: 0; }
+  .status-dot.error { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+  .result-header-text { flex: 1; }
+  .result-label { font-size: 11px; font-family: var(--mono); letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+  .result-rfid { font-family: var(--mono); font-size: 0.9rem; color: var(--accent2); margin-top: 2px; }
+
+  .book-code-wrap { padding: 2rem 1.5rem; text-align: center; position: relative; overflow: hidden; }
+  .code-glow {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(110,231,183,0.12) 0%, transparent 70%);
+    pointer-events: none; animation: glowPulse 3s ease infinite;
+  }
+  .code-eyebrow { font-size: 11px; font-family: var(--mono); letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-bottom: 0.75rem; }
+  .book-code { font-family: var(--mono); font-size: clamp(2.2rem,8vw,3rem); font-weight: 700; color: var(--accent); letter-spacing: 0.08em; line-height: 1; position: relative; text-shadow: 0 0 40px rgba(110,231,183,0.4); }
+  .book-code.error-code { color: var(--danger); text-shadow: 0 0 40px rgba(248,113,113,0.4); }
+
+  .book-info { padding: 0 1.5rem 1.5rem; border-top: 1px solid var(--border); padding-top: 1.25rem; }
+  .book-title { font-size: 1.05rem; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; }
+  .book-author { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; }
+  .book-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .meta-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.6rem 0.75rem; }
+  .meta-key { font-size: 10px; font-family: var(--mono); letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; margin-bottom: 3px; }
+  .meta-val { font-size: 0.85rem; font-weight: 500; color: var(--text); }
+
+  .scan-lines { position: fixed; inset: 0; pointer-events: none; z-index: 100; display: none; }
+  .scan-lines.active { display: block; }
+  .scan-line { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent2), transparent); animation: scanDown 0.6s ease forwards; opacity: 0.6; }
+
+  .loading-wrap { display: none; flex-direction: column; align-items: center; gap: 1rem; padding: 2.5rem; }
+  .loading-wrap.active { display: flex; }
+  .spinner { width: 40px; height: 40px; border: 2px solid var(--border); border-top-color: var(--accent2); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  .loading-text { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); letter-spacing: 0.1em; }
+
+  .nfc-warn { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.82rem; color: var(--danger); font-family: var(--mono); letter-spacing: 0.04em; display: none; line-height: 1.5; }
+  .nfc-warn.show { display: block; }
+
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(16px)}  to{opacity:1;transform:translateY(0)} }
+  @keyframes resultReveal { from{opacity:0;transform:translateY(24px) scale(0.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+  @keyframes glowPulse { 0%,100%{opacity:0.6;transform:translate(-50%,-50%) scale(1)} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.2)} }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  @keyframes scanDown { from{top:0;opacity:0.8} to{top:100%;opacity:0} }
+  @keyframes charReveal { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+  @keyframes ringExpand { 0%{transform:scale(0.6);opacity:0.7} 100%{transform:scale(1.8);opacity:0} }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-badge"><span class="dot"></span>SISTEMA ATIVO</div>
+  <h1>Leitor RFID / NFC</h1>
+  <p class="subtitle">Validação de acervo — Biblioteca</p>
+</div>
+
+<div class="scanner-card">
+  <div class="nfc-warn" id="nfcWarn"></div>
+
+  <div class="nfc-zone" id="nfcZone" onclick="iniciarNFC()">
+    <div class="nfc-rings">
+      <div class="nfc-ring"></div>
+      <div class="nfc-ring"></div>
+      <div class="nfc-ring"></div>
+      <div class="nfc-icon-center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 7a9 9 0 0 1 0 10"/><path d="M17 9.5a5 5 0 0 1 0 5"/>
+          <path d="M4 17a9 9 0 0 1 0-10"/><path d="M7 14.5a5 5 0 0 1 0-5"/>
+          <circle cx="12" cy="12" r="1" fill="currentColor"/>
+        </svg>
+      </div>
+    </div>
+    <div class="nfc-status-text" id="nfcStatusText">Toque para ativar NFC</div>
+    <div class="nfc-hint" id="nfcHint">Aproxime a tag do livro após ativar</div>
+  </div>
+
+  <div class="divider">ou digite manualmente</div>
+
+  <div class="rfid-display">
+    <div class="rfid-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/>
+        <line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
+      </svg>
+    </div>
+    <div class="rfid-input-wrap">
+      <label>Código RFID</label>
+      <input type="text" id="rfidInput" placeholder="ex: A1B2C3D4" maxlength="32"
+             autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text">
+    </div>
+  </div>
+
+  <button class="btn-scan" onclick="validarRFID()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><path d="M8 2v16"/><path d="M16 6v16"/>
+    </svg>
+    Validar
+  </button>
+
+  <div class="quick-tags">
+    <p>Testes rápidos</p>
+    <div class="tag" onclick="testar('A1B2C3D4')">A1B2C3D4</div>
+    <div class="tag" onclick="testar('F9E8D7C6')">F9E8D7C6</div>
+    <div class="tag" onclick="testar('0011AABB')">0011AABB</div>
+    <div class="tag" onclick="testar('CC44DD22')">CC44DD22</div>
+    <div class="tag" onclick="testar('INVALIDO')">Inválido</div>
+  </div>
+</div>
+
+<div class="result-card" id="resultCard">
+  <div class="result-header">
+    <div class="status-dot" id="statusDot"></div>
+    <div class="result-header-text">
+      <div class="result-label">RFID detectado</div>
+      <div class="result-rfid" id="rfidDisplay">—</div>
+    </div>
+  </div>
+  <div class="loading-wrap" id="loadingWrap">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Consultando Supabase...</div>
+  </div>
+  <div id="bookContent">
+    <div class="book-code-wrap">
+      <div class="code-glow"></div>
+      <div class="code-eyebrow">Código do Livro</div>
+      <div class="book-code" id="bookCode">—</div>
+    </div>
+    <div class="book-info" id="bookInfo"></div>
+  </div>
+</div>
+
+<div class="scan-lines" id="scanLines"><div class="scan-line"></div></div>
+
+<script>
+/* ── Supabase config ── */
+const SUPABASE_URL = 'https://ytnubxhbydxnazsbemlt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0bnVieGhieWR4bmF6c2JlbWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMjAyOTAsImV4cCI6MjA5NTY5NjI5MH0.Qg2yv92RODk04kfssfeWhMuPbfYydIQ8-mWNUyfEKLc';
+
+async function buscarLivro(rfid) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/livros?rfid=eq.${encodeURIComponent(rfid)}&select=*`,
+    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+  );
+  if (!res.ok) throw new Error('Erro na requisição: ' + res.status);
+  const data = await res.json();
+  return data.length > 0 ? data[0] : null;
+}
+
+/* ── NFC ── */
+let nfcAtivo = false;
+const zone     = document.getElementById('nfcZone');
+const nfcText  = document.getElementById('nfcStatusText');
+const nfcHint  = document.getElementById('nfcHint');
+const nfcWarn  = document.getElementById('nfcWarn');
+
+window.addEventListener('load', () => {
+  if ('NDEFReader' in window) iniciarNFC();
+  else setNFCUnsupported();
+});
+
+async function iniciarNFC() {
+  if (!('NDEFReader' in window)) { setNFCUnsupported(); return; }
+  if (nfcAtivo) return;
+  try {
+    const reader = new NDEFReader();
+    await reader.scan();
+    nfcAtivo = true;
+    zone.className = 'nfc-zone listening';
+    nfcText.textContent = 'Aguardando tag NFC…';
+    nfcHint.textContent  = 'Aproxime o livro do celular';
+    nfcWarn.classList.remove('show');
+
+    reader.onreading = ({ serialNumber, message }) => {
+      let codigo = '';
+      for (const record of message.records) {
+        if (record.recordType === 'text') {
+          codigo = new TextDecoder(record.encoding || 'utf-8').decode(record.data).trim();
+          break;
+        }
+        if (record.recordType === 'url') {
+          const url = new TextDecoder().decode(record.data);
+          const match = url.match(/rfid=([^&]+)/i);
+          if (match) { codigo = match[1].trim(); break; }
+        }
+      }
+      if (!codigo && serialNumber) codigo = serialNumber.replace(/:/g,'').toUpperCase();
+      if (codigo) {
+        zone.className = 'nfc-zone reading';
+        nfcText.textContent = 'Tag lida!';
+        nfcHint.textContent  = codigo;
+        document.getElementById('rfidInput').value = codigo;
+        validarRFID(codigo);
+        setTimeout(() => {
+          zone.className = 'nfc-zone listening';
+          nfcText.textContent = 'Aguardando tag NFC…';
+          nfcHint.textContent  = 'Aproxime o livro do celular';
+        }, 2000);
+      }
+    };
+    reader.onreadingerror = () => {
+      zone.className = 'nfc-zone error-state';
+      nfcText.textContent = 'Erro ao ler tag';
+      nfcHint.textContent  = 'Tente novamente';
+    };
+  } catch (err) {
+    nfcAtivo = false;
+    zone.className = 'nfc-zone error-state';
+    if (err.name === 'NotAllowedError') {
+      nfcText.textContent = 'Permissão negada';
+      nfcHint.textContent  = 'Permita NFC nas configurações';
+      nfcWarn.textContent  = '⚠ Permita o acesso ao NFC quando o Chrome solicitar.';
+    } else {
+      nfcText.textContent = 'NFC indisponível';
+      nfcHint.textContent  = err.message || 'Use o campo manual abaixo';
+    }
+    nfcWarn.classList.add('show');
+  }
+}
+
+function setNFCUnsupported() {
+  zone.className = 'nfc-zone error-state';
+  nfcText.textContent = 'NFC não suportado';
+  nfcHint.textContent  = 'Use Chrome no Android com NFC ativado';
+  nfcWarn.innerHTML = '⚠ Web NFC só funciona no <strong>Chrome para Android</strong>. No iOS use o campo manual.';
+  nfcWarn.classList.add('show');
+}
+
+/* ── validação ── */
+function testar(val) {
+  document.getElementById('rfidInput').value = val;
+  validarRFID(val);
+}
+
+function triggerScanLine() {
+  const el = document.getElementById('scanLines');
+  el.classList.add('active');
+  setTimeout(() => el.classList.remove('active'), 700);
+}
+
+async function validarRFID(forcedVal) {
+  const input = (forcedVal || document.getElementById('rfidInput').value).trim().toUpperCase();
+  if (!input) { shake(document.querySelector('.rfid-display')); return; }
+
+  triggerScanLine();
+
+  const card        = document.getElementById('resultCard');
+  const dot         = document.getElementById('statusDot');
+  const rfidDisp    = document.getElementById('rfidDisplay');
+  const loadWrap    = document.getElementById('loadingWrap');
+  const loadingText = document.getElementById('loadingText');
+  const bookContent = document.getElementById('bookContent');
+  const bookCode    = document.getElementById('bookCode');
+  const bookInfo    = document.getElementById('bookInfo');
+
+  card.classList.remove('visible');
+  dot.className = 'status-dot';
+  bookContent.style.display = 'none';
+  loadWrap.classList.add('active');
+  loadingText.textContent = 'Consultando Supabase...';
+  rfidDisp.textContent = input;
+  void card.offsetWidth;
+  card.classList.add('visible');
+
+  try {
+    const livro = await buscarLivro(input);
+    loadWrap.classList.remove('active');
+    bookContent.style.display = 'block';
+
+    if (livro) {
+      dot.className = 'status-dot';
+      bookCode.className = 'book-code';
+      animateCode(bookCode, livro.code);
+      const cor = livro.status === 'Disponível' ? '#6ee7b7' : '#f87171';
+      bookInfo.innerHTML = `
+        <div class="book-title">${livro.title}</div>
+        <div class="book-author">${livro.author}</div>
+        <div class="book-meta">
+          <div class="meta-item"><div class="meta-key">Categoria</div><div class="meta-val">${livro.categoria || '—'}</div></div>
+          <div class="meta-item"><div class="meta-key">Localização</div><div class="meta-val">${livro.localizacao || '—'}</div></div>
+          <div class="meta-item" style="grid-column:span 2">
+            <div class="meta-key">Status</div>
+            <div class="meta-val" style="color:${cor}">● ${livro.status}</div>
+          </div>
+        </div>`;
+    } else {
+      dot.className = 'status-dot error';
+      bookCode.className = 'book-code error-code';
+      animateCode(bookCode, 'NÃO ENCONTRADO');
+      bookInfo.innerHTML = `<div style="text-align:center;padding-bottom:.5rem;color:var(--muted);font-size:.9rem">
+        RFID <code style="color:var(--accent2)">${input}</code> não cadastrado no Supabase.</div>`;
+    }
+  } catch (err) {
+    loadWrap.classList.remove('active');
+    bookContent.style.display = 'block';
+    dot.className = 'status-dot error';
+    bookCode.className = 'book-code error-code';
+    animateCode(bookCode, 'ERRO');
+    bookInfo.innerHTML = `<div style="text-align:center;padding-bottom:.5rem;color:var(--danger);font-size:.85rem">
+      Falha ao conectar ao Supabase.<br><span style="color:var(--muted)">${err.message}</span></div>`;
+  }
+}
+
+function animateCode(el, text) {
+  el.textContent = '';
+  [...text].forEach((ch, i) => {
+    const s = document.createElement('span');
+    s.textContent = ch;
+    s.style.cssText = `display:inline-block;opacity:0;transform:translateY(8px);animation:charReveal .3s ease ${i*.045}s forwards`;
+    el.appendChild(s);
+  });
+}
+
+function shake(el) {
+  el.style.animation = 'none'; void el.offsetWidth;
+  el.style.animation = 'shake .35s ease';
+  el.addEventListener('animationend', () => el.style.animation='', { once:true });
+}
+
+document.getElementById('rfidInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') validarRFID();
+});
+</script>
+</body>
+</html>
