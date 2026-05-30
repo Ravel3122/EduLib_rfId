@@ -8,9 +8,9 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0d0d14; --surface: #16161f; --card: #1e1e2e;
-    --border: rgba(255,255,255,0.08); --accent: #6ee7b7; --accent2: #818cf8;
-    --text: #f0f0f8; --muted: #6b7280; --danger: #f87171; --success: #6ee7b7;
+    --bg: #f5f5f7; --surface: #ffffff; --card: #ffffff;
+    --border: rgba(0,0,0,0.08); --accent: #cc0000; --accent2: #e00000;
+    --text: #1a1a1a; --muted: #888888; --danger: #cc0000; --success: #16a34a;
     --mono: 'Space Mono', monospace; --sans: 'DM Sans', sans-serif;
   }
   body {
@@ -21,50 +21,51 @@
   .header { text-align: center; margin-bottom: 2.5rem; animation: fadeDown 0.6s ease both; }
   .header-badge {
     display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(110,231,183,0.1); border: 1px solid rgba(110,231,183,0.25);
+    background: rgba(204,0,0,0.08); border: 1px solid rgba(204,0,0,0.2);
     color: var(--accent); font-family: var(--mono); font-size: 11px;
     letter-spacing: 0.12em; padding: 5px 14px; border-radius: 100px; margin-bottom: 1rem;
   }
   .header-badge .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
-  h1 { font-size: clamp(1.6rem,5vw,2.2rem); font-weight: 600; letter-spacing: -0.02em; }
+  h1 { font-size: clamp(1.6rem,5vw,2.2rem); font-weight: 600; letter-spacing: -0.02em; color: var(--text); }
   .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 0.4rem; }
 
   .scanner-card {
     width: 100%; max-width: 420px; background: var(--card);
     border: 1px solid var(--border); border-radius: 20px; padding: 2rem;
     margin-bottom: 1.5rem; animation: fadeUp 0.6s ease 0.1s both;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.06);
   }
 
   .nfc-zone {
-    background: var(--surface); border: 1.5px dashed rgba(129,140,248,0.35);
+    background: #fafafa; border: 1.5px dashed rgba(204,0,0,0.3);
     border-radius: 16px; padding: 2rem 1.5rem; text-align: center;
     margin-bottom: 1.25rem; position: relative; overflow: hidden;
     transition: border-color 0.3s, background 0.3s; cursor: pointer;
   }
-  .nfc-zone.listening { border-color: var(--accent2); background: rgba(129,140,248,0.06); }
-  .nfc-zone.reading   { border-color: var(--accent);  background: rgba(110,231,183,0.06); }
-  .nfc-zone.error-state { border-color: var(--danger); background: rgba(248,113,113,0.06); }
+  .nfc-zone.listening { border-color: var(--accent); background: rgba(204,0,0,0.03); }
+  .nfc-zone.reading   { border-color: #16a34a; background: rgba(22,163,74,0.04); }
+  .nfc-zone.error-state { border-color: #888; background: rgba(0,0,0,0.03); }
 
   .nfc-rings { position: relative; width: 72px; height: 72px; margin: 0 auto 1rem; }
   .nfc-ring {
     position: absolute; inset: 0; border-radius: 50%;
-    border: 2px solid rgba(129,140,248,0.3);
+    border: 2px solid rgba(204,0,0,0.2);
     animation: ringExpand 2s ease infinite; opacity: 0;
   }
   .nfc-ring:nth-child(2) { animation-delay: 0.5s; }
   .nfc-ring:nth-child(3) { animation-delay: 1s; }
   .nfc-icon-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-  .nfc-icon-center svg { width: 32px; height: 32px; color: var(--accent2); transition: color 0.3s; }
-  .nfc-zone.reading .nfc-icon-center svg { color: var(--accent); }
-  .nfc-zone.error-state .nfc-icon-center svg { color: var(--danger); }
+  .nfc-icon-center svg { width: 32px; height: 32px; color: var(--accent); transition: color 0.3s; }
+  .nfc-zone.reading .nfc-icon-center svg { color: #16a34a; }
+  .nfc-zone.error-state .nfc-icon-center svg { color: var(--muted); }
 
   .nfc-status-text {
     font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.1em;
     color: var(--muted); text-transform: uppercase; transition: color 0.3s; margin-bottom: 0.4rem;
   }
-  .nfc-zone.listening .nfc-status-text { color: var(--accent2); }
-  .nfc-zone.reading   .nfc-status-text { color: var(--accent); }
-  .nfc-zone.error-state .nfc-status-text { color: var(--danger); }
+  .nfc-zone.listening .nfc-status-text { color: var(--accent); }
+  .nfc-zone.reading   .nfc-status-text { color: #16a34a; }
+  .nfc-zone.error-state .nfc-status-text { color: var(--muted); }
   .nfc-hint { font-size: 0.78rem; color: var(--muted); }
 
   .divider {
@@ -75,16 +76,16 @@
   .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
   .rfid-display {
-    background: var(--surface); border: 1px solid var(--border);
+    background: #fafafa; border: 1px solid var(--border);
     border-radius: 12px; padding: 1rem 1.25rem;
     margin-bottom: 1rem; display: flex; align-items: center; gap: 12px;
   }
   .rfid-icon {
     width: 40px; height: 40px; border-radius: 10px;
-    background: rgba(129,140,248,0.12); border: 1px solid rgba(129,140,248,0.2);
+    background: rgba(204,0,0,0.08); border: 1px solid rgba(204,0,0,0.15);
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
-  .rfid-icon svg { width: 20px; height: 20px; color: var(--accent2); }
+  .rfid-icon svg { width: 20px; height: 20px; color: var(--accent); }
   .rfid-input-wrap { flex: 1; }
   .rfid-input-wrap label {
     display: block; font-size: 11px; letter-spacing: 0.08em;
@@ -92,72 +93,74 @@
   }
   #rfidInput {
     width: 100%; background: transparent; border: none; outline: none;
-    font-family: var(--mono); font-size: 1.05rem; color: var(--accent2);
+    font-family: var(--mono); font-size: 1.05rem; color: var(--accent);
     letter-spacing: 0.1em; caret-color: var(--accent);
   }
-  #rfidInput::placeholder { color: rgba(107,114,128,0.4); }
+  #rfidInput::placeholder { color: rgba(0,0,0,0.2); }
 
   .btn-scan {
-    width: 100%; padding: 0.9rem; background: var(--accent2); color: #0d0d14;
+    width: 100%; padding: 0.9rem; background: var(--accent); color: #ffffff;
     font-family: var(--sans); font-size: 0.95rem; font-weight: 600;
     border: none; border-radius: 12px; cursor: pointer; letter-spacing: 0.02em;
     transition: opacity 0.2s, transform 0.15s;
     display: flex; align-items: center; justify-content: center; gap: 8px;
   }
+  .btn-scan:hover { background: #aa0000; }
   .btn-scan:active { transform: scale(0.98); opacity: 0.9; }
   .btn-scan svg { width: 18px; height: 18px; }
 
   .quick-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1.25rem; }
   .quick-tags p { width: 100%; font-size: 11px; color: var(--muted); font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 2px; }
   .tag {
-    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    background: #fff; border: 1px solid var(--border);
     color: var(--muted); font-family: var(--mono); font-size: 0.75rem;
     padding: 5px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.05em;
   }
-  .tag:hover { border-color: var(--accent2); color: var(--accent2); background: rgba(129,140,248,0.08); }
+  .tag:hover { border-color: var(--accent); color: var(--accent); background: rgba(204,0,0,0.04); }
 
   .result-card {
     width: 100%; max-width: 420px; background: var(--card);
     border: 1px solid var(--border); border-radius: 20px; overflow: hidden;
     display: none; animation: resultReveal 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.06);
   }
   .result-card.visible { display: block; }
   .result-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse 1.5s infinite; flex-shrink: 0; }
-  .status-dot.error { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 8px rgba(22,163,74,0.4); animation: pulse 1.5s infinite; flex-shrink: 0; }
+  .status-dot.error { background: var(--danger); box-shadow: 0 0 8px rgba(204,0,0,0.4); }
   .result-header-text { flex: 1; }
   .result-label { font-size: 11px; font-family: var(--mono); letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
-  .result-rfid { font-family: var(--mono); font-size: 0.9rem; color: var(--accent2); margin-top: 2px; }
+  .result-rfid { font-family: var(--mono); font-size: 0.9rem; color: var(--accent); margin-top: 2px; }
 
-  .book-code-wrap { padding: 2rem 1.5rem; text-align: center; position: relative; overflow: hidden; }
+  .book-code-wrap { padding: 2rem 1.5rem; text-align: center; position: relative; overflow: hidden; background: #fff; }
   .code-glow {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
     width: 200px; height: 200px;
-    background: radial-gradient(circle, rgba(110,231,183,0.12) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(204,0,0,0.07) 0%, transparent 70%);
     pointer-events: none; animation: glowPulse 3s ease infinite;
   }
   .code-eyebrow { font-size: 11px; font-family: var(--mono); letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-bottom: 0.75rem; }
-  .book-code { font-family: var(--mono); font-size: clamp(2.2rem,8vw,3rem); font-weight: 700; color: var(--accent); letter-spacing: 0.08em; line-height: 1; position: relative; text-shadow: 0 0 40px rgba(110,231,183,0.4); }
-  .book-code.error-code { color: var(--danger); text-shadow: 0 0 40px rgba(248,113,113,0.4); }
+  .book-code { font-family: var(--mono); font-size: clamp(2.2rem,8vw,3rem); font-weight: 700; color: var(--accent); letter-spacing: 0.08em; line-height: 1; position: relative; text-shadow: 0 2px 20px rgba(204,0,0,0.2); }
+  .book-code.error-code { color: var(--muted); text-shadow: none; }
 
   .book-info { padding: 0 1.5rem 1.5rem; border-top: 1px solid var(--border); padding-top: 1.25rem; }
   .book-title { font-size: 1.05rem; font-weight: 600; color: var(--text); margin-bottom: 0.25rem; }
   .book-author { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; }
   .book-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .meta-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.6rem 0.75rem; }
+  .meta-item { background: #fafafa; border: 1px solid var(--border); border-radius: 10px; padding: 0.6rem 0.75rem; }
   .meta-key { font-size: 10px; font-family: var(--mono); letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; margin-bottom: 3px; }
   .meta-val { font-size: 0.85rem; font-weight: 500; color: var(--text); }
 
   .scan-lines { position: fixed; inset: 0; pointer-events: none; z-index: 100; display: none; }
   .scan-lines.active { display: block; }
-  .scan-line { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent2), transparent); animation: scanDown 0.6s ease forwards; opacity: 0.6; }
+  .scan-line { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); animation: scanDown 0.6s ease forwards; opacity: 0.5; }
 
   .loading-wrap { display: none; flex-direction: column; align-items: center; gap: 1rem; padding: 2.5rem; }
   .loading-wrap.active { display: flex; }
-  .spinner { width: 40px; height: 40px; border: 2px solid var(--border); border-top-color: var(--accent2); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  .spinner { width: 40px; height: 40px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
   .loading-text { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); letter-spacing: 0.1em; }
 
-  .nfc-warn { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.82rem; color: var(--danger); font-family: var(--mono); letter-spacing: 0.04em; display: none; line-height: 1.5; }
+  .nfc-warn { background: rgba(204,0,0,0.05); border: 1px solid rgba(204,0,0,0.2); border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.82rem; color: var(--danger); font-family: var(--mono); letter-spacing: 0.04em; display: none; line-height: 1.5; }
   .nfc-warn.show { display: block; }
 
   @keyframes fadeDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
@@ -396,7 +399,7 @@ async function validarRFID(forcedVal) {
       dot.className = 'status-dot';
       bookCode.className = 'book-code';
       animateCode(bookCode, livro.code);
-      const cor = livro.status === 'Disponível' ? '#6ee7b7' : '#f87171';
+      const cor = livro.status === 'Disponível' ? '#16a34a' : '#cc0000';
       bookInfo.innerHTML = `
         <div class="book-title">${livro.title}</div>
         <div class="book-author">${livro.author}</div>
