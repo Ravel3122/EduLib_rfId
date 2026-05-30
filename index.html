@@ -203,22 +203,7 @@
     <div class="nfc-hint" id="nfcHint">Aproxime a tag do livro após ativar</div>
   </div>
 
-  <div class="divider">ou digite manualmente</div>
-
-  <div class="rfid-display">
-    <div class="rfid-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/>
-        <line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
-      </svg>
-    </div>
-    <div class="rfid-input-wrap">
-      <label>Código RFID</label>
-      <input type="text" id="rfidInput" placeholder="ex: A1B2C3D4" maxlength="32"
-             autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text">
-    </div>
-  </div>
-
+  
   <button class="btn-scan" onclick="validarRFID()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
       <path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><path d="M8 2v16"/><path d="M16 6v16"/>
@@ -350,7 +335,7 @@ function setNFCUnsupported() {
   zone.className = 'nfc-zone error-state';
   nfcText.textContent = 'NFC não suportado';
   nfcHint.textContent  = 'Use Chrome no Android com NFC ativado';
-  nfcWarn.innerHTML = '⚠ Web NFC só funciona no <strong>Chrome para Android</strong>. No iOS use o campo manual.';
+  nfcWarn.innerHTML = "Aproxime o identificador do livro à traseira do celular";
   nfcWarn.classList.add('show');
 }
 
